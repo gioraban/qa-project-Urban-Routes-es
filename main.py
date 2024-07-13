@@ -3,30 +3,6 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 
-#Esta funcion devuelve el codigo sms que recive el Usuario luego de agregar su nuemero de telefono
-def retrieve_phone_code(driver) -> str:
-    import json
-    import time
-    from selenium.common import WebDriverException
-    code = None
-    for i in range(10):
-        try:
-            logs = [log["message"] for log in driver.get_log('performance') if log.get("message")
-                    and 'api/v1/number?number' in log.get("message")]
-            for log in reversed(logs):
-                message_data = json.loads(log)["message"]
-                body = driver.execute_cdp_cmd('Network.getResponseBody',
-                                              {'requestId': message_data["params"]["requestId"]})
-                code = ''.join([x for x in body['body'] if x.isdigit()])
-        except WebDriverException:
-            time.sleep(2)
-            continue
-        if not code:
-            raise Exception("No se encontró el código de confirmación del teléfono.\n"
-                            "Utiliza 'retrieve_phone_code' solo después de haber solicitado el código en tu aplicación.")
-        return code
-
-
 class UrbanRoutesPage: #establece la ruta del  usuario
     from_field = (By.ID, 'from')
     to_field = (By.ID, 'to')
@@ -66,10 +42,13 @@ class PedirTaxiButton: #ejecuta el boton para pedir el taxi
     def click_button_taxi(self):
         self.driver.find_element(*self.button_taxi).click()
 
+    def check_taxi_button(self):
+        self.driver.find_element(*self.button_taxi)
+        assert isinstance(self.driver.find_element(*self.button_taxi).text, object)
+
 
 class TaxiComfort: #pide la tarifa Comfort
     comfort_taxi = (By.XPATH, '//*[@id="root"]/div/div[3]/div[3]/div[2]/div[1]/div[5]')
-    phone_number_field = (By.XPATH, '//*[@id="root"]/div/div[3]/div[3]/div[2]/div[2]/div[1]/div')
 
     def __init__(self, driver):
         self.driver = driver
@@ -80,19 +59,25 @@ class TaxiComfort: #pide la tarifa Comfort
     def click_comfort_taxi(self):
         self.driver.find_element(*self.comfort_taxi).click()
 
-    def click_phone_number_field(self):
-        self.driver.find_element(*self.phone_number_field).click()
+    def check_taxi_comfort(self):
+        self.driver.find_element(*self.comfort_taxi)
+        assert isinstance(self.driver.find_element(*self.comfort_taxi).text, object)
 
 
 class PhoneNumberWindow: #Agrega el numero telefonico del usuario
+    ph_number_field = (By.XPATH, '//*[@id="root"]/div/div[3]/div[3]/div[2]/div[2]/div[1]/div')
     head = (By.XPATH, '//*[@id="root"]/div/div[1]/div[2]/div[1]/div')
     phone_number_field = (By.ID, 'phone')
     siguiente_button = (By.XPATH, '//*[@id="root"]/div/div[1]/div[2]/div[1]/form/div[2]/button')
     sms_code = (By.ID, 'code')
     confirmar_button = (By.XPATH, '//*[@id="root"]/div/div[1]/div[2]/div[2]/form/div[2]/button[1]')
+    ph_number_filled = (By.CLASS_NAME, 'np-text')
 
     def __init__(self, driver):
         self.driver = driver
+
+    def click_ph_number_field(self):
+        self.driver.find_element(*self.ph_number_field).click()
 
     def wait_for_load_head(self):
         WebDriverWait(self.driver, 5).until(expected_conditions.visibility_of_element_located(self.head))
@@ -109,9 +94,14 @@ class PhoneNumberWindow: #Agrega el numero telefonico del usuario
     def click_confirmar_button(self):
         self.driver.find_element(*self.confirmar_button).click()
 
+    def check_ph_number_filled(self):
+        self.driver.find_element(*self.ph_number_filled)
+        assert isinstance(self.driver.find_element(*self.ph_number_filled).text, object)
+
 
 class PaymentField: #seleciona la casilla de pago
     pago_button = (By.XPATH, '//*[@id="root"]/div/div[3]/div[3]/div[2]/div[2]/div[2]')
+    credit_card = (By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div[1]/div[2]/div[3]/div[3]/div/img')
 
     def __init__(self, driver):
         self.driver = driver
@@ -122,9 +112,14 @@ class PaymentField: #seleciona la casilla de pago
     def pago_click(self):
         self.driver.find_element(*self.pago_button).click()
 
+    def check_credit_card(self):
+        self.driver.find_element(*self.credit_card)
+        assert isinstance(self.driver.find_element(*self.credit_card).text, object)
+
 
 class SelectPaymentWindow: #selecciona el metodo de pago
     credit_card = (By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div[1]/div[2]/div[3]/div[3]/div/img')
+    card = (By.CLASS_NAME, 'card-wrapper')
 
     def __init__(self, driver):
         self.driver = driver
@@ -135,13 +130,18 @@ class SelectPaymentWindow: #selecciona el metodo de pago
     def select_cc(self):
         self.driver.find_element(*self.credit_card).click()
 
+    def check_credit_card_window(self):
+        self.driver.find_element(*self.card)
+        assert isinstance(self.driver.find_element(*self.card).text, object)
 
-class CreditCardWindow: #agrega los datos de la tarjeta de credito 
+
+class CreditCardWindow: #agrega los datos de la tarjeta de credito
     card = (By.CLASS_NAME, 'card-wrapper')
     card_number_field = (By.ID, 'number')
     code_field = (By.XPATH, '(//*[@id="code"])[2]')
     submit_payment_button = (By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div[2]/form/div[3]/button[1]')
     close_payment_window = (By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/div[1]/button')
+    tarjeta = (By.CLASS_NAME, 'pp-value-text')
 
     def __init__(self, driver):
         self.driver = driver
@@ -163,6 +163,13 @@ class CreditCardWindow: #agrega los datos de la tarjeta de credito
 
     def close_window(self):
         self.driver.find_element(*self.close_payment_window).click()
+
+    def wait_for_load_tarjeta(self):
+        WebDriverWait(self.driver, 5).until(expected_conditions.visibility_of_element_located(self.tarjeta))
+
+    def check_credit_card_filled(self):
+        self.driver.find_element(*self.tarjeta)
+        assert isinstance(self.driver.find_element(*self.tarjeta).text, object)
 
 
 class MessageField: #agrega el mensaje para el  conductor
@@ -189,6 +196,12 @@ class IceCream: #ordena dos helados
     add_ice_cream = (By.XPATH,
                      '//*[@id="root"]/div/div[3]/div[3]/div[2]/div[2]/div[4]/div[2]/div[3]/div/div[2]/div[1]/div/div[2]/div/div[3]')
 
+    counter_2 = (By.XPATH,
+                 '//*[@id="root"]//div[3]/div[2]/div[2]/div[4]/div[2]/div[3]/div/div[2]/div[1]/div/div[2]/div/div[2]')
+
+    def wait_for_load_ice_cream(self):
+        WebDriverWait(self.driver, 5).until(expected_conditions.visibility_of_element_located(self.add_ice_cream))
+
     def __init__(self, driver):
         self.driver = driver
 
@@ -198,15 +211,28 @@ class IceCream: #ordena dos helados
     def add_second_ice_cream(self):
         self.driver.find_element(*self.add_ice_cream).click()
 
+    def check_counter_2(self):
+        self.driver.find_element(*self.counter_2)
+        assert isinstance(self.driver.find_element(*self.counter_2).text, object)
 
-class OrderTaxi: #se eejeeccuta el pedido del taxi
+
+class OrderTaxiModal: #se ejeccuta el pedido del taxi y que aparezca el modal
     button_book_taxi = (By.CLASS_NAME, 'smart-button-secondary')
+    modal = (By.CLASS_NAME, 'order-header-title')
+    # current_url = driver.current_url
 
     def __init__(self, driver):
         self.driver = driver
 
     def click_book_taxi(self):
         self.driver.find_element(*self.button_book_taxi).click()
+
+    def wait_for_load_modal(self):
+        WebDriverWait(self.driver, 5).until(expected_conditions.visibility_of_element_located(self.modal))
+
+    def check_modal(self):
+        self.driver.find_element(*self.modal)
+        assert isinstance(self.driver.find_element(*self.modal).text, object)
 
 
 class InfoDriver: #espera que aparezca la informacion del driver
@@ -217,3 +243,8 @@ class InfoDriver: #espera que aparezca la informacion del driver
 
     def wait_until_driver_loaded(self):
         WebDriverWait(self.driver, 60).until(expected_conditions.visibility_of_element_located(self.driver_rating))
+
+    def check_driver_rating(self):
+        self.driver.find_element(*self.driver_rating)
+        assert isinstance(self.driver.find_element(*self.driver_rating).text, object)
+
