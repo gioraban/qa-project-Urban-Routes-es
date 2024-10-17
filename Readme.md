@@ -96,6 +96,16 @@
         12. `def test_info_driver(self):` Crea un tiempo de espera para comprobar que aparezca la ventana con la informacion del conductor.
      
      iii. El metodo `teardown_class()` finaliza las pruebas  cerrando el navegador y detiene el driver.
+   
+   ### Conclusión del Proyecto Urban Routes
+
+En el proyecto Urban Routes, se automatizó el servicio de solicitud de taxis en la página web utilizando el patrón Page Object Model (POM). Esto incluye pasos como seleccionar rutas, elegir el tipo de automóvil, ingresar un número de teléfono y proporcionar detalles de pago.
+
+El proyecto se compone de tres archivos: **Data.py**, que contiene los datos necesarios para las pruebas; **Main.py**, que define las clases y la lógica de automatización; y **Test_urban_routes.py**, donde se ejecutan las pruebas.
+
+Cada clase maneja un aspecto específico del proceso de solicitud, permitiendo una organización clara y eficiente. Las pruebas abarcan desde la configuración de direcciones hasta la finalización del pedido, garantizando que todas las funcionalidades sean correctas.
+
+Finalmente, el uso de métodos como `setup_class` y `teardown_class` asegura una gestión adecuada del entorno de prueba, facilitando un inicio y cierre efectivos del navegador. Este proyecto destaca la eficacia de la automatización en la mejora de la experiencia del usuario en Urban Routes.
 
 ## Muchas gracias!!!
 ### Georgina Khamisso
